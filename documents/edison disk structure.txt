@@ -1,0 +1,183 @@
+File structures of Edison disks,
+8 inch RX01 disks
+
+
+77 tracks, 
+26 sectors per track 
+Sector is 128 bytes 
+total is 256.256 bytes
+
+Interleave is 2 
+
+From the Personal Computer book:
+
+5.1.5.6 At the hardware level, a disk is divided into 77 tracks (numbered 0 to
+76). Each track consists of 26 sectors (numbered 1 to 26). A sector consists
+of 64 words:
+
+const sectorlength = 64
+array sector [1:sectorlength] (int)
+
+The kernel treats a disk as an array of sectors with sector numbers in
+the range 0:2001. Sectors with consecutive numbers are separated by a physical
+gap of two sectors to reduce rotational delays during data transfers. The
+kernel uses the following algorithm to convert a sector numberto a disk
+address:
+
+track address := sectorno div 26
+sector address := 3 * sectorno mod 26 + 1
+
+The operating system provides two procedures for direct disk access:
+proc readsector(drive, sectorno: int; var value: sector)
+proc writesector(drive, sectorno: int; value: sector)
+
+These operations read and write the contents of a given sector stored on
+a given disk drive. The use of these procedures requires detailed knowledge
+of the format of standard disks (Section 5.16).
+
+* proc readsector(
+sectorno, addr:
+var trackaddr,
+sectaddr: int
+begin
+trackaddr := sectorno div 26;
+sectaddr := 3 * sectorno mod 26 + 1;
+readdisk(sectaddr,trackaddr, addr)
+int)
+end
+
+
+do get: $ proc get
+subtract(6, s) $ var driveno, sectorno,
+push(read0) $ count, addr: int
+push(st[ s+2]) $ begin s := 8 + 3;
+push(st[ s+4]) $ driveno := st[s + 1];
+call(disktransfer) $ sectorno := st[s + 2];
+pop(3) $ addr := st{[s + 3];
+move(empty0, st[ status0]) $ disktransfer(read,
+do get2: $ driveno, sectorno);
+testbit(ready0, st[{status0])$ place(status, empty);
+ifequal(get2) $ diskwait(ready);
+move(sector, st[buffer0]) $ place(buffer,
+do get3: $ sectorlength) ;
+testbit(ready0, stl stature
+ifequal(get3)
+move(st[s+6], st[ bufferd]) ;
+diskwait(ready) ;
+place(buffer, addr);
+diskwait( done)
+do getH: $ end
+testbit(doned, st[{status0])
+ifequal(get4)
+return
+const
+
+
+5.16 DISK FORMAT
+
+The following is important only to programmers who wish to move the
+system to another computer that uses 8-inch floppy disks.
+
+5.16.1 Disk Pages
+
+A disk contains 2002 sectors numbered from 0 to 2001. Two sectors
+with consecutive numbers are separated by a physical gap of two sectors
+(Section 5.15.6). The operating system ignores the first 10? sectors and treats
+the rest of the disk as an array of pages with page numbers in the range
+1:249. Each disk page consists of 8 sectors with consecutive sector numbers.
+The conversion of a page number to a sector number is defined as follows:
+
+sectorno := 8 * pageno + 2
+location in disk file in bytes = 128 * sectorno
+
+The use of the disk pages is shown below:
+
+Pages K words Contents
+1-2      1    Disk map and catalog			diskmap page 1 = 500 (4 sectors)  page 2 = 700 (12 sectors)
+3-10     4    Kernel code
+11-26    8    Operating system code
+27-249 111.5  Files                         page 27 = 6D00       
+
+Pages 1 and 2 hold the following data structures:
+Disk map 4 sectors  sector 10 $500
+Disk catalog 12 sector start at 14 $700
+
+When the system is started, the first sector of the kernel code (sector 1
+on track 1) is automatically loaded from disk 0 into the store at address 0
+and is executed. This sector then loads the rest of the kernel code, which in
+turn loads the operating system code.
+
+5.16.2 Disk Catalogs
+A disk catalog is a record
+
+record diskcatalog (size: int; contents: table)
+
+The number of files described in a catalog are given by a size field (0 <
+size < 47), The contents of a catalog is an array of items:
+
+array table [1:47] (item)
+
+Each item describes a single file by its name and attributes:
+
+record item (title: name; attr: attributes)
+
+where
+record attributes (address (page): int; length: int (pages); words (word 
+
+
+The address of a nonempty file is the page number of its first page. The
+other page numbers are foundin the disk map .
+Thelength of a file is defined in terms of the number of pages occupied
+by the file, and by the number of data words! stored on the last page of the
+file:
+record position (pages, words: int)
+
+total nr of bytes in file = lenght (8 sectors of 128 bytes) -1 + words * 2
+
+Text file is in one character per word, end of line is $0A LF
+
+Disk Maps
+A disk map is a record that defines the number of free pages on a disk
+(0 < free < 223) and a page number called next (1 < next < 249):
+
+record diskmap (free, next: int; contents: table)
+A disk mapincludes an array that holds an integer value for every disk
+page:
+array table [1:249] (int)
+
+(1) If contents[m] = 32767, then page number m is free.
+(2) If contents[m] =n (where 27 < n < 249), then page number m is
+part of a file, and is followed by page numbern in thefile.
+(3) If contents[m] = 0, then page number m is either the last page of a
+file or one of the reserved pages (if 1 < m < 26).
+
+Boot:
+
+How to load a bootstrap program into the memory of a PDP-11.
+Set the ENABLE/HALT switch to the HALT position.
+Set the first address (often 001000) in the switch register.
+Press the LOAD ADDR switch.
+Set the contents of the first address (from the table below)
+in the switch register.
+Lift the DEP switch.
+The computer automatically advances to the next address.
+Set the contents for the next address (from the table below)
+in the switch register.
+Lift the DEP switch.
+Repeat the last two steps until you have deposited all the instructions.
+How to verify the deposited bootstrap loader program.
+
+Set the first address (001000) in the switch register.
+Press the LOAD ADDR switch.
+Press the EXAM switch to display the contents of that address
+in the DATA register.
+Compare the value in the DATA register with the value from
+the table below.
+If the values are the same press EXAM again to display the contents of the next address.
+If the values are not the same repeat the steps of the bootstrap load description.
+How to start the bootstrap program (the computer).
+
+Set the start address (001000) in the switch register.
+Press the LOAD ADDR switch.
+Set the ENABLE/HALT switch to ENABLE.
+Press the START switch

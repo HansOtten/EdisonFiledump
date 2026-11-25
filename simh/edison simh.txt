@@ -1,0 +1,30 @@
+>simh config.sys
+PDP-11 simulator Open SIMH V4.1-0 Current        git commit id: 6e9324e0+uncommitted-changes
+#
+# Load two disk images using the commands:
+#
+#     attach ry0 disk1.dsk
+#     attach ry1 disk2.dsk
+#
+# and boot using:
+#
+#     go 0
+#
+%SIM-INFO: RY0: buffering file in memory
+sim> att ry0 rx02_kernel.bin
+%SIM-INFO: RY0: buffering file in memory
+sim> att ry1 rx02_system.bin
+%SIM-INFO: RY1: buffering file in memory
+sim> go 0
+
+The Edison system
+
+insert two disks and type
+
+s if both disks are standard
+0 if only disk 0 is standard
+1 if only disk 1 is standard
+b if both disks are blank
+s
+
+Command =
